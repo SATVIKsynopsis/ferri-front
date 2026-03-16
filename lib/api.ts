@@ -91,12 +91,13 @@ export async function getMessages(
   limit = 50
 ) {
   const res = await fetch(
-    `${BASE_URL}/chats/${chat_id}/api/messages?page=${page}&limit=${limit}`,
+    `${BASE_URL}/api/chats/${chat_id}/messages?page=${page}&limit=${limit}`,
     {
       headers: { Authorization: `Bearer ${token}` },
       credentials: "include",
     }
   );
+
   if (!res.ok) throw await res.json();
   return res.json();
 }
