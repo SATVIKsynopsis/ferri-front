@@ -1,4 +1,4 @@
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://ferrumchat.onrender.com";
 
 // ─── Auth ────────────────────────────────────────────────────────────────────
 
@@ -104,6 +104,6 @@ export async function getMessages(
 // ─── WebSocket ───────────────────────────────────────────────────────────────
 
 export function connectWebSocket(token: string) {
-  const WS_URL = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8000";
+  const WS_URL = process.env.NEXT_PUBLIC_WS_URL || "ws://https://ferrumchat.onrender.com";
   return new WebSocket(`${WS_URL}/ws?token=${token}`);
 }
