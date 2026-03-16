@@ -34,10 +34,12 @@ export default function Header() {
           <Button variant="outline" className="hidden sm:inline-flex">
             Sign In
           </Button>
-          </Link>
+          </Link >
+          <Link href="/register">
           <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
             Get Started
           </Button>
+          </Link>
         </div>
       </div>
     </header>
