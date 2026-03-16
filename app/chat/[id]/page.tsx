@@ -25,7 +25,8 @@ interface WsMessage {
   chat_id: string;
   created_at: string;
   sent_at?: number;
-
+  type?: string
+  sent?: number
 }
 
 export default function ChatRoomPage() {
@@ -110,15 +111,29 @@ const [userId, setUserId] = useState<string | null>(() => {
   const setupWebSocket = (t: string) => {
   const ws = connectWebSocket(t);
 
-  ws.onopen = () => {
-    setWsConnected(true);
-  };
+  let pingInterval: NodeJS.Timeout;
+
+ws.onopen = () => {
+  setWsConnected(true);
+
+  pingInterval = setInterval(() => {
+    ws.send(JSON.stringify({
+      type: "ping",
+      sent: Date.now()
+    }));
+  }, 5000);
+};
 
   ws.onmessage = (event) => {
     try {
       const data: WsMessage = JSON.parse(event.data);
       console.log("received id:", data.id);
 console.log("pending ids:", sentTimes.current);
+
+if (data.type === "pong" && data.sent) {
+  const latency = Date.now() - data.sent;
+  console.log("WS RTT:", latency, "ms");
+}
 
 if (data.sender_id === userId) {
   const lastSent = Array.from(sentTimes.current.values()).pop();
@@ -191,7 +206,10 @@ if (!isOwnMessage) return [...prev, incomingMessage];
   };
 
     ws.onerror = () => setWsConnected(false);
-    ws.onclose = () => setWsConnected(false);
+    ws.onclose = () => {
+  setWsConnected(false);
+  clearInterval(pingInterval);
+};
 
     wsRef.current = ws;
   };
