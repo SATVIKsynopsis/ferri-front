@@ -15,6 +15,7 @@ interface Message {
   content: string;
   created_at: string;
   status?: 'sending' | 'sent' | 'failed';
+  sent_at?: number;
 }
 
 interface WsMessage {
@@ -23,6 +24,8 @@ interface WsMessage {
   content: string;
   chat_id: string;
   created_at: string;
+  sent_at?: number;
+
 }
 
 export default function ChatRoomPage() {
@@ -45,6 +48,7 @@ const [userId, setUserId] = useState<string | null>(() => {
   }
 });  
   const [participantName, setParticipantName] = useState('Chat User');
+  const sentTimes = useRef<Map<string, number>>(new Map());
   const [messages, setMessages] = useState<Message[]>([]);
   const [messageInput, setMessageInput] = useState('');
   const [sending, setSending] = useState(false);
@@ -114,11 +118,19 @@ const [userId, setUserId] = useState<string | null>(() => {
     try {
       const data: WsMessage = JSON.parse(event.data);
 
-    if ((data as any).sent_at && String(data.sender_id) === String(userId)) {
-  const latency = Date.now() - (data as any).sent_at;
+const start = sentTimes.current.get(data.id!);
+
+if (start && data.sender_id === userId) {
+  const latency = Date.now() - start;
   console.log("WebSocket latency:", latency, "ms");
+  sentTimes.current.delete(data.id!);
 }
 
+if (start) {
+  const latency = Date.now() - start;
+  console.log("WebSocket latency:", latency, "ms");
+  sentTimes.current.delete(data.id!);
+}
       if (data.chat_id !== chatId) return;
 
       setMessages((prev) => {
@@ -211,7 +223,7 @@ if (!isOwnMessage) return [...prev, incomingMessage];
 
     try {
       if (wsRef.current?.readyState === WebSocket.OPEN) {
-
+sentTimes.current.set(optimisticId, sentAt);
 wsRef.current.send(
   JSON.stringify({
     id: optimisticId,
