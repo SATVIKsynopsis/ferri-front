@@ -114,9 +114,9 @@ const [userId, setUserId] = useState<string | null>(() => {
     try {
       const data: WsMessage = JSON.parse(event.data);
 
-      if ((data as any).sent_at) {
+    if ((data as any).sent_at && String(data.sender_id) === String(userId)) {
   const latency = Date.now() - (data as any).sent_at;
-  console.log("Chat latency:", latency, "ms");
+  console.log("WebSocket latency:", latency, "ms");
 }
 
       if (data.chat_id !== chatId) return;
