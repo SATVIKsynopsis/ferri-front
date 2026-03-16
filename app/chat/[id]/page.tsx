@@ -126,13 +126,12 @@ ws.onopen = () => {
 
   ws.onmessage = (event) => {
     try {
-      const data: WsMessage = JSON.parse(event.data);
-      console.log("received id:", data.id);
-console.log("pending ids:", sentTimes.current);
+   const data: WsMessage = JSON.parse(event.data);
 
 if (data.type === "pong" && data.sent) {
   const latency = Date.now() - data.sent;
   console.log("WS RTT:", latency, "ms");
+  return; 
 }
 
 if (data.sender_id === userId) {
