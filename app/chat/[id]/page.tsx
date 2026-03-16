@@ -117,19 +117,17 @@ const [userId, setUserId] = useState<string | null>(() => {
   ws.onmessage = (event) => {
     try {
       const data: WsMessage = JSON.parse(event.data);
+      console.log("received id:", data.id);
+console.log("pending ids:", sentTimes.current);
 
-const start = sentTimes.current.get(data.id!);
+if (data.sender_id === userId) {
+  const lastSent = Array.from(sentTimes.current.values()).pop();
 
-if (start && data.sender_id === userId) {
-  const latency = Date.now() - start;
-  console.log("WebSocket latency:", latency, "ms");
-  sentTimes.current.delete(data.id!);
-}
-
-if (start) {
-  const latency = Date.now() - start;
-  console.log("WebSocket latency:", latency, "ms");
-  sentTimes.current.delete(data.id!);
+  if (lastSent) {
+    const latency = Date.now() - lastSent;
+    console.log("WebSocket latency:", latency, "ms");
+    sentTimes.current.clear();
+  }
 }
       if (data.chat_id !== chatId) return;
 
