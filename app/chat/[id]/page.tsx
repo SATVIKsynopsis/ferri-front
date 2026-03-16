@@ -114,6 +114,11 @@ const [userId, setUserId] = useState<string | null>(() => {
     try {
       const data: WsMessage = JSON.parse(event.data);
 
+      if ((data as any).sent_at) {
+  const latency = Date.now() - (data as any).sent_at;
+  console.log("Chat latency:", latency, "ms");
+}
+
       if (data.chat_id !== chatId) return;
 
       setMessages((prev) => {
@@ -187,6 +192,7 @@ if (!isOwnMessage) return [...prev, incomingMessage];
 
     const content = messageInput.trim();
     const createdAt = new Date().toISOString();
+    const sentAt = Date.now();  
     const optimisticId = crypto.randomUUID();
 
     setMessages((prev) => [
@@ -205,18 +211,20 @@ if (!isOwnMessage) return [...prev, incomingMessage];
 
     try {
       if (wsRef.current?.readyState === WebSocket.OPEN) {
-        wsRef.current.send(
-          JSON.stringify({
-            id: optimisticId,
-            chat_id: chatId,
-            content,
-            receiver_id: receiverId,
-            sender_id: userId,
-            user1_id: userId,
-            user2_id: receiverId,
-            created_at: createdAt,
-          })
-        );
+
+wsRef.current.send(
+  JSON.stringify({
+    id: optimisticId,
+    chat_id: chatId,
+    content,
+    receiver_id: receiverId,
+    sender_id: userId,
+    user1_id: userId,
+    user2_id: receiverId,
+    created_at: createdAt,
+    sent_at: sentAt
+  })
+);
       } else {
         throw new Error('WebSocket is not connected');
       }
@@ -336,4 +344,3 @@ if (!isOwnMessage) return [...prev, incomingMessage];
     </>
   );
 }
-  
