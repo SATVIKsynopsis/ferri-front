@@ -48,6 +48,15 @@ export async function getMe() {
   return res.json();
 }
 
+export async function searchUsers(username: string) {
+  const res = await fetch(`${BASE_URL}/users/search?username=${username}`, {
+    credentials: "include",
+  });
+  if (!res.ok) throw await res.json();
+  return res.json();
+}
+
+
 // ─── Chats ───────────────────────────────────────────────────────────────────
 
 export async function getChats(token: string) {
@@ -101,6 +110,43 @@ export async function getMessages(
   if (!res.ok) throw await res.json();
   return res.json();
 }
+
+export async function editMessage(
+  token: string,
+  message_id: string,
+  content: string
+) {
+  const res = await fetch(`${BASE_URL}/api/messages/${message_id}`, {
+    method: "PATCH", 
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    credentials: "include",
+    body: JSON.stringify({ content }),
+  });
+
+  if (!res.ok) throw await res.json();
+  return res.json();
+}
+
+export async function deleteMessage(
+  token: string,
+  message_id: string
+) {
+  const res = await fetch(`${BASE_URL}/api/messages/${message_id}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    credentials: "include",
+  });
+
+  if (!res.ok) throw await res.json();
+
+  return true;
+}
+
 
 // ─── WebSocket ───────────────────────────────────────────────────────────────
 

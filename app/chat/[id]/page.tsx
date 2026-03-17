@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { ArrowLeft, Send } from 'lucide-react';
 import { getMessages, connectWebSocket, getChats } from '@/lib/api';
 import ThemeToggle from '@/components/theme-toggle';
+import { editMessage, deleteMessage } from '@/lib/api';
 
 interface Message {
   id: string;
@@ -57,6 +58,8 @@ const [userId, setUserId] = useState<string | null>(() => {
   const [receiverId, setReceiverId] = useState<string | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [editingContent, setEditingContent] = useState('');
 
   useEffect(() => {
     const t = localStorage.getItem('token');
@@ -268,6 +271,41 @@ wsRef.current.send(
     }
   };
 
+  const handleEdit = async (messageId: string) => {
+  if (!editingContent.trim() || !token) return;
+
+  try {
+    const updated = await editMessage(token, messageId, editingContent);
+
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.id === messageId
+          ? { ...m, content: updated.content }
+          : m
+      )
+    );
+
+    setEditingMessageId(null);
+    setEditingContent('');
+  } catch (err) {
+    console.error('Edit failed', err);
+  }
+};
+
+const handleDelete = async (messageId: string) => {
+  if (!token) return;
+
+  try {
+    await deleteMessage(token, messageId);
+
+    setMessages((prev) =>
+      prev.filter((m) => m.id !== messageId)
+    );
+  } catch (err) {
+    console.error('Delete failed', err);
+  }
+};
+
   return (
     <>
     <div className="h-screen flex flex-col bg-background">
@@ -306,7 +344,29 @@ wsRef.current.send(
             const isOwnMessage = userId ? String(message.sender_id) === String(userId) : false;
 
             return (
-           <div key={message.id} className="flex w-full">
+           <div
+  key={message.id}
+  className="flex w-full"
+  onContextMenu={(e) => {
+    e.preventDefault();
+
+    if (!isOwnMessage) return;
+
+    const action = prompt("Type 'edit' or 'delete'");
+
+    if (action === 'edit') {
+      setEditingMessageId(message.id);
+      setEditingContent(message.content);
+    }
+
+    if (action === 'delete') {
+  const confirmDelete = confirm("Delete this message?");
+  if (confirmDelete) {
+    handleDelete(message.id);
+  }
+} 
+  }}
+>
               <div
   className={`max-w-[80%] sm:max-w-md px-4 py-2.5 shadow-sm ${
     isOwnMessage
@@ -314,7 +374,40 @@ wsRef.current.send(
       : 'mr-auto bg-muted text-foreground rounded-2xl rounded-bl-md'
   }`}
 >
-                <p className="break-words text-sm leading-relaxed">{message.content}</p>
+{editingMessageId === message.id ? (
+  <div className="flex gap-2 items-center">
+    <Input
+      value={editingContent}
+      onChange={(e) => setEditingContent(e.target.value)}
+      className="text-sm"
+      autoFocus
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') handleEdit(message.id);
+        if (e.key === 'Escape') {
+          setEditingMessageId(null);
+          setEditingContent('');
+        }
+      }}
+    />
+    <Button size="sm" onClick={() => handleEdit(message.id)}>
+      Save
+    </Button>
+    <Button
+      size="sm"
+      variant="ghost"
+      onClick={() => {
+        setEditingMessageId(null);
+        setEditingContent('');
+      }}
+    >
+      Cancel
+    </Button>
+  </div>
+) : (
+  <p className="break-words text-sm leading-relaxed">
+    {message.content}
+  </p>
+)}
                 <div className="mt-1 flex items-center gap-2 justify-end">
                   <p
                     className={`text-[11px] ${
