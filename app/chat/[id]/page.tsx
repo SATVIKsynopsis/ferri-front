@@ -9,6 +9,13 @@ import { ArrowLeft, Send } from 'lucide-react';
 import { getMessages, connectWebSocket, getChats } from '@/lib/api';
 import ThemeToggle from '@/components/theme-toggle';
 import { editMessage, deleteMessage } from '@/lib/api';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { MoreVertical, Pencil, Trash } from 'lucide-react';
 
 interface Message {
   id: string;
@@ -142,7 +149,6 @@ if (data.sender_id === userId) {
 
   if (lastSent) {
     const latency = Date.now() - lastSent;
-    console.log("WebSocket latency:", latency, "ms");
     sentTimes.current.clear();
   }
 }
@@ -340,99 +346,128 @@ const handleDelete = async (messageId: string) => {
             </div>
           </div>
         ) : (
-          messages.map((message) => {
-            const isOwnMessage = userId ? String(message.sender_id) === String(userId) : false;
+          <>
+         {messages.map((message) => {
 
-            return (
-           <div
-  key={message.id}
-  className="flex w-full"
-  onContextMenu={(e) => {
-    e.preventDefault();
+  const isOwnMessage = userId
+    ? String(message.sender_id) === String(userId)
+    : false;
 
-    if (!isOwnMessage) return;
+  return (
+    <div key={message.id} className="flex w-full group">
+      <div
+        className={`relative max-w-[80%] sm:max-w-md px-4 py-2.5 shadow-sm ${
+          isOwnMessage
+            ? 'ml-auto bg-primary text-primary-foreground rounded-2xl rounded-br-md'
+            : 'mr-auto bg-muted text-foreground rounded-2xl rounded-bl-md'
+        }`}
+      >
+        {isOwnMessage && (
+          <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="p-1 rounded hover:bg-black/10">
+                  <MoreVertical className="w-4 h-4" />
+                </button>
+              </DropdownMenuTrigger>
 
-    const action = prompt("Type 'edit' or 'delete'");
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onClick={() => {
+                    setEditingMessageId(message.id);
+                    setEditingContent(message.content);
+                  }}
+                  className="flex items-center gap-2 cursor-pointer"
+                >
+                  <Pencil className="w-4 h-4" />
+                  Edit
+                </DropdownMenuItem>
 
-    if (action === 'edit') {
-      setEditingMessageId(message.id);
-      setEditingContent(message.content);
-    }
-
-    if (action === 'delete') {
-  const confirmDelete = confirm("Delete this message?");
-  if (confirmDelete) {
-    handleDelete(message.id);
-  }
-} 
-  }}
->
-              <div
-  className={`max-w-[80%] sm:max-w-md px-4 py-2.5 shadow-sm ${
-    isOwnMessage
-      ? 'ml-auto bg-primary text-primary-foreground rounded-2xl rounded-br-md'
-      : 'mr-auto bg-muted text-foreground rounded-2xl rounded-bl-md'
-  }`}
->
-{editingMessageId === message.id ? (
-  <div className="flex gap-2 items-center">
-    <Input
-      value={editingContent}
-      onChange={(e) => setEditingContent(e.target.value)}
-      className="text-sm"
-      autoFocus
-      onKeyDown={(e) => {
-        if (e.key === 'Enter') handleEdit(message.id);
-        if (e.key === 'Escape') {
-          setEditingMessageId(null);
-          setEditingContent('');
-        }
-      }}
-    />
-    <Button size="sm" onClick={() => handleEdit(message.id)}>
-      Save
-    </Button>
-    <Button
-      size="sm"
-      variant="ghost"
-      onClick={() => {
-        setEditingMessageId(null);
-        setEditingContent('');
-      }}
-    >
-      Cancel
-    </Button>
-  </div>
-) : (
-  <p className="break-words text-sm leading-relaxed">
-    {message.content}
-  </p>
-)}
-                <div className="mt-1 flex items-center gap-2 justify-end">
-                  <p
-                    className={`text-[11px] ${
-                      isOwnMessage
-                        ? 'text-primary-foreground/80'
-                        : 'text-foreground/60'
-                    }`}
-                  >
-                    {new Date(message.created_at).toLocaleTimeString([], {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  </p>
-                  {isOwnMessage && message.status === 'sending' && (
-                    <span className="text-[11px] text-primary-foreground/80">Sending…</span>
-                  )}
-                  {isOwnMessage && message.status === 'failed' && (
-                    <span className="text-[11px] text-destructive">Failed</span>
-                  )}
-                </div>
-              </div>
-            </div>
-          )})
+                <DropdownMenuItem
+                  onClick={() => {
+                    const confirmDelete = confirm("Delete this message?");
+                    if (confirmDelete) handleDelete(message.id);
+                  }}
+                  className="flex items-center gap-2 text-red-500 cursor-pointer"
+                >
+                  <Trash className="w-4 h-4" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         )}
+
+        {/* ✏️ EDIT MODE */}
+        {editingMessageId === message.id ? (
+          <div className="flex gap-2 items-center w-full">
+            <Input
+              value={editingContent}
+              onChange={(e) => setEditingContent(e.target.value)}
+              className="text-sm"
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleEdit(message.id);
+                if (e.key === 'Escape') {
+                  setEditingMessageId(null);
+                  setEditingContent('');
+                }
+              }}
+            />
+            <Button size="sm" onClick={() => handleEdit(message.id)}>
+              Save
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                setEditingMessageId(null);
+                setEditingContent('');
+              }}
+            >
+              Cancel
+            </Button>
+          </div>
+        ) : (
+          <p className="break-words text-sm leading-relaxed">
+            {message.content}
+          </p>
+        )}
+
+        {/* ⏱ TIME + STATUS */}
+        <div className="mt-1 flex items-center gap-2 justify-end">
+          <p
+            className={`text-[11px] ${
+              isOwnMessage
+                ? 'text-primary-foreground/80'
+                : 'text-foreground/60'
+            }`}
+          >
+            {new Date(message.created_at).toLocaleTimeString([], {
+              hour: '2-digit',
+              minute: '2-digit',
+            })}
+          </p>
+
+          {isOwnMessage && message.status === 'sending' && (
+            <span className="text-[11px] text-primary-foreground/80">
+              Sending…
+            </span>
+          )}
+
+          {isOwnMessage && message.status === 'failed' && (
+            <span className="text-[11px] text-destructive">
+              Failed
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+})}
         <div ref={messagesEndRef} />
+        </>
+  )}
       </div>
 
       {/* Input */}

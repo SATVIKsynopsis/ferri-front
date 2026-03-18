@@ -49,7 +49,7 @@ export async function getMe() {
 }
 
 export async function searchUsers(username: string) {
-  const res = await fetch(`${BASE_URL}/users/search?username=${username}`, {
+  const res = await fetch(`${BASE_URL}/api/users/search?username=${username}`, {
     credentials: "include",
   });
   if (!res.ok) throw await res.json();
