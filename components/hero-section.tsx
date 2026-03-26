@@ -12,7 +12,7 @@ export default function HeroSection() {
           <div key={i} className="border border-primary" />
         ))}
       </div>
-
+        
       {/* Gradient orbs */}
       <div className="absolute top-20 right-0 w-96 h-96 bg-gradient-to-br from-primary/30 to-accent/20 rounded-full blur-3xl opacity-20 -z-10" />
       <div className="absolute -bottom-32 left-0 w-80 h-80 bg-gradient-to-tr from-secondary/20 to-primary/10 rounded-full blur-3xl opacity-20 -z-10" />
