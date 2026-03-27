@@ -2,6 +2,13 @@
 
 import { useEffect } from 'react';
 import Link from 'next/link';
+import React from 'react';
+import { motion } from 'framer-motion';
+import { DotGlobeHero } from '@/components/globe-hero';
+import { ArrowRight, Zap } from 'lucide-react';
+import { Canvas, useFrame } from "@react-three/fiber";
+import { PerspectiveCamera } from "@react-three/drei";
+import * as THREE from "three";
 
 export default function Page() {
   useEffect(() => {
@@ -38,6 +45,20 @@ export default function Page() {
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         html { scroll-behavior: smooth; overflow-y: auto; height: 100%; }
         body { font-family: 'Plus Jakarta Sans', sans-serif; background: #07070e; color: #e8e8f0; min-height: 100vh; height: auto; }
+
+        /* GLOBAL GRID BACKGROUND */
+        .landing-page-grid {
+          position: fixed;
+          inset: 0;
+          pointer-events: none;
+          z-index: 0;
+          overflow: hidden;
+        }
+
+        .landing-page-grid canvas {
+          width: 100% !important;
+          height: 100% !important;
+        }
 
         /* PREMIUM ANIMATIONS */
         @keyframes orbFloat {
@@ -199,17 +220,20 @@ export default function Page() {
         }
 
         /* AMBIENT ORBS */
-        .landing-orbs { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
-        .landing-orb { position: absolute; border-radius: 50%; filter: blur(100px); opacity: 0.12; animation: orbFloat 20s ease-in-out infinite; }
-        .orb-1 { width: 600px; height: 600px; background: radial-gradient(circle, #6366f1, transparent 70%); top: -200px; right: -100px; animation-delay: 0s; }
-        .orb-2 { width: 500px; height: 500px; background: radial-gradient(circle, #7c3aed, transparent 70%); bottom: 100px; left: -150px; animation-delay: -6s; }
-        .orb-3 { width: 400px; height: 400px; background: radial-gradient(circle, #06b6d4, transparent 70%); top: 50%; left: 40%; animation-delay: -12s; }
-        .orb-4 { width: 350px; height: 350px; background: radial-gradient(circle, #ec4899, transparent 70%); bottom: 200px; right: 100px; animation-delay: -3s; }
+        .landing-orbs { 
+          position: fixed; 
+          inset: 0; 
+          pointer-events: none; 
+          z-index: 0; 
+          overflow: hidden; 
+          display: none;
+        }
 
         /* FIRE/FLAME EFFECT */
         .landing-flames {
           position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden;
           mix-blend-mode: screen;
+          display: none;
         }
 
         .flame {
@@ -251,7 +275,7 @@ export default function Page() {
 
         /* MAIN CONTAINER */
         .landing-main {
-          position: relative; z-index: 1;
+          position: relative; z-index: 2;
           width: 100%;
           height: auto;
         }
@@ -388,7 +412,7 @@ export default function Page() {
         /* HERO SECTION */
         .landing-hero {
           min-height: 100vh; display: flex; align-items: center; justify-content: center;
-          padding: 80px 32px 120px;
+          padding: 0px 32px 120px;
           text-align: center;
           margin-top: 64px;
           background: linear-gradient(135deg, transparent, rgba(99,102,241,0.03), transparent);
@@ -744,6 +768,72 @@ export default function Page() {
         }
       `}</style>
 
+      {/* Full Page Grid Background */}
+      <div className="landing-page-grid" aria-hidden>
+        <Canvas>
+          <PerspectiveCamera makeDefault position={[0, 0, 5]} fov={75} />
+          <ambientLight intensity={0.3} />
+          
+          <group>
+            {/* Latitude lines - spanning full page */}
+            {Array.from({ length: 9 }).map((_, idx) => {
+              const lat = -60 + idx * 15;
+              const latRad = (lat * Math.PI) / 180;
+              const radius = 4;
+              const points = [];
+              for (let lng = -180; lng <= 180; lng += 5) {
+                const lngRad = (lng * Math.PI) / 180;
+                const x = radius * Math.cos(latRad) * Math.cos(lngRad);
+                const y = radius * Math.sin(latRad);
+                const z = radius * Math.cos(latRad) * Math.sin(lngRad);
+                points.push(new THREE.Vector3(x, y, z));
+              }
+              return (
+                <line key={`lat-${idx}`}>
+                  <bufferGeometry>
+                    <bufferAttribute
+                      attach="attributes-position"
+                      count={points.length}
+                      array={new Float32Array(points.flatMap((p) => [p.x, p.y, p.z]))}
+                      itemSize={3}
+                    />
+                  </bufferGeometry>
+                  <lineBasicMaterial color="#6366f1" transparent opacity={0.08} linewidth={1} />
+                </line>
+              );
+            })}
+
+            {/* Longitude lines - spanning full page */}
+            {Array.from({ length: 12 }).map((_, idx) => {
+              const lng = -180 + idx * 30;
+              const lngRad = (lng * Math.PI) / 180;
+              const radius = 4;
+              const points = [];
+              for (let lat = -90; lat <= 90; lat += 5) {
+                const latRad = (lat * Math.PI) / 180;
+                const x = radius * Math.cos(latRad) * Math.cos(lngRad);
+                const y = radius * Math.sin(latRad);
+                const z = radius * Math.cos(latRad) * Math.sin(lngRad);
+                points.push(new THREE.Vector3(x, y, z));
+              }
+              return (
+                <line key={`lng-${idx}`}>
+                  <bufferGeometry>
+                    <bufferAttribute
+                      attach="attributes-position"
+                      count={points.length}
+                      array={new Float32Array(points.flatMap((p) => [p.x, p.y, p.z]))}
+                      itemSize={3}
+                    />
+                  </bufferGeometry>
+                  <lineBasicMaterial color="#6366f1" transparent opacity={0.08} linewidth={1} />
+                </line>
+              );
+            })}
+          </group>
+        </Canvas>
+      </div>
+
       <div className="landing-orbs" aria-hidden>
         <div className="landing-orb orb-1" />
         <div className="landing-orb orb-2" />
@@ -774,72 +864,150 @@ export default function Page() {
           </div>
         </nav>
 
-        {/* Hero Section */}
+        {/* Integrated Globe Hero - Main Hero Section */}
         <section className="landing-hero">
-          <div className="landing-hero-content">
-            <div className="landing-hero-badge">⚡ Built for Speed</div>
-            <h1 className="landing-hero-title">Real-Time Chat. Lightning Fast.</h1>
-            <p className="landing-hero-subtitle">
-              Experience the future of messaging with sub-millisecond delivery, beautiful UI, and enterprise-grade security. No servers. Just pure performance.
-            </p>
-            <div className="landing-hero-btns">
-              <Link href="/register" className="landing-btn-primary">Get Started Free</Link>
-              <button className="landing-btn-secondary" onClick={() => document.getElementById('features').scrollIntoView({ behavior: 'smooth' })}>
-                Learn More
-              </button>
+          <DotGlobeHero
+            rotationSpeed={0.004}
+            globeRadius={1.3}
+            className="bg-transparent relative overflow-hidden"
+          >
+            <div className="absolute inset-0 bg-gradient-to-t from-background/50 via-transparent to-background/30" />
+            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse" />
+            <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-primary/8 rounded-full blur-3xl animate-pulse" />
+            
+            <div className="relative z-10 text-center space-y-12 max-w-5xl mx-auto px-6 py-12">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8 }}
+                className="space-y-8"
+              >
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.6, delay: 0.2 }}
+                  className="relative inline-flex items-center gap-3 px-6 py-3 rounded-full bg-gradient-to-r from-primary/20 via-primary/10 to-primary/20 border border-primary/30 backdrop-blur-xl shadow-2xl"
+                >
+                  <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary/10 via-transparent to-primary/10 animate-pulse" />
+                  <div className="w-2 h-2 bg-primary rounded-full animate-ping" />
+                  <span className="relative z-10 text-sm font-bold text-primary tracking-wider uppercase">Built with Rust</span>
+                  <div className="w-2 h-2 bg-primary rounded-full animate-ping animation-delay-500" />
+                </motion.div>
+                
+                <div className="space-y-2">
+                  <motion.h1 
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 1, delay: 0.3 }}
+                    className="text-5xl md:text-7xl lg:text-8xl xl:text-9xl font-black tracking-tighter leading-[0.85] select-none"
+                    style={{ fontFamily: 'Plus Jakarta Sans, system-ui, sans-serif' }}
+                  >
+                    <span className="block font-light text-foreground/70 mb-0 text-4xl md:text-6xl lg:text-7xl">
+                      Chat
+                    </span>
+                    <span className="block relative">
+                      <span className="bg-gradient-to-br from-primary via-primary to-primary/60 bg-clip-text text-transparent font-black relative z-10">
+                        Instantly
+                      </span>
+                      <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary to-primary/60 bg-clip-text text-transparent font-black blur-2xl opacity-50 scale-105" 
+                           style={{ fontFamily: 'Plus Jakarta Sans, system-ui, sans-serif' }}>
+                        Instantly
+                      </div>
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: "100%" }}
+                        transition={{ duration: 1.5, delay: 1.2, ease: "easeOut" }}
+                        className="absolute -bottom-6 left-0 h-3 bg-gradient-to-r from-primary via-primary/80 to-transparent rounded-full shadow-lg shadow-primary/50"
+                      />
+                    </span>
+                  </motion.h1>
+                </div>
+                
+                <motion.div 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.8, delay: 0.8 }}
+                  className="max-w-3xl mx-auto space-y-2 -mt-20"
+                >
+                  <p className="text-lg md:text-xl text-muted-foreground leading-relaxed font-medium" 
+                     style={{ fontFamily: 'Plus Jakarta Sans, system-ui, sans-serif' }}>
+                    Lightning-fast messaging powered by{" "}
+                    <span className="text-foreground font-semibold bg-gradient-to-r from-primary/20 to-primary/10 px-2 py-1 rounded-md">
+                      Rust backend infrastructure
+                    </span>
+                  </p>
+                  <p className="text-base text-muted-foreground/80 leading-relaxed">
+                    End-to-end encrypted conversations, instant delivery, and seamless synchronization across all devices.
+                  </p>
+                </motion.div>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 1 }}
+                className="flex flex-col sm:flex-row gap-6 justify-center items-center pt-4"
+              >
+                <Link href="/register" className="landing-btn-primary">
+                  Start Chatting
+                </Link>
+                <button className="landing-btn-secondary" onClick={() => document.getElementById('features').scrollIntoView({ behavior: 'smooth' })}>
+                  View Features
+                </button>
+              </motion.div>
             </div>
-          </div>
+          </DotGlobeHero>
         </section>
 
         {/* Features Section */}
         <section id="features" className="landing-features">
-          <h2 className="landing-section-title">Why Choose FerriChat?</h2>
+          <h2 className="landing-section-title">Built for the Modern Web</h2>
           <div className="landing-grid">
             <div className="landing-feature-card">
               <div className="landing-feature-icon">⚡</div>
-              <h3 className="landing-feature-title">Ultra-Fast</h3>
+              <h3 className="landing-feature-title">Lightning Speed</h3>
               <p className="landing-feature-text">
-                Sub-millisecond message delivery with optimized infrastructure for global scale.
+                Sub-millisecond message delivery powered by Rust. Experience latency so low it feels instant.
               </p>
             </div>
 
             <div className="landing-feature-card">
               <div className="landing-feature-icon">🔐</div>
-              <h3 className="landing-feature-title">Secure</h3>
+              <h3 className="landing-feature-title">Enterprise Security</h3>
               <p className="landing-feature-text">
-                End-to-end encrypted conversations with enterprise-grade security protocols.
+                End-to-end encrypted. Zero-knowledge architecture. Your data stays yours.
               </p>
             </div>
 
             <div className="landing-feature-card">
-              <div className="landing-feature-icon">🎨</div>
-              <h3 className="landing-feature-title">Beautiful UI</h3>
+              <div className="landing-feature-icon">📊</div>
+              <h3 className="landing-feature-title">Real-Time Sync</h3>
               <p className="landing-feature-text">
-                Modern, intuitive interface designed for seamless user experience.
+                Perfectly synchronized across all devices. Changes propagate instantly.
               </p>
             </div>
 
             <div className="landing-feature-card">
-              <div className="landing-feature-icon">📱</div>
-              <h3 className="landing-feature-title">Cross-Platform</h3>
+              <div className="landing-feature-icon">🌍</div>
+              <h3 className="landing-feature-title">Global Scale</h3>
               <p className="landing-feature-text">
-                Works perfectly on desktop, tablet, and mobile devices.
-              </p>
-            </div>
-
-            <div className="landing-feature-card">
-              <div className="landing-feature-icon">♾️</div>
-              <h3 className="landing-feature-title">Scalable</h3>
-              <p className="landing-feature-text">
-                Built to handle millions of concurrent conversations without slowdown.
+                Distributed infrastructure across continents. Connect with anyone, anywhere.
               </p>
             </div>
 
             <div className="landing-feature-card">
               <div className="landing-feature-icon">🚀</div>
-              <h3 className="landing-feature-title">Always On</h3>
+              <h3 className="landing-feature-title">Infinite Scalability</h3>
               <p className="landing-feature-text">
-                99.9% uptime guarantee with redundant infrastructure across regions.
+                Handles millions of concurrent connections without breaking a sweat.
+              </p>
+            </div>
+
+            <div className="landing-feature-card">
+              <div className="landing-feature-icon">💎</div>
+              <h3 className="landing-feature-title">Developer First</h3>
+              <p className="landing-feature-text">
+                Simple APIs, comprehensive docs, and exceptional support for builders.
               </p>
             </div>
           </div>
